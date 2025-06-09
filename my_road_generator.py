@@ -16,7 +16,7 @@ class MyRoadGenerator(object):
         self.z = None
         self.x_road = None
 
-    def generate_road_input(self, L=100, dx=0.01, v=100, seed=None, wb = 2.500):
+    def generate_road_input(self, L=100, dx=0.01, v=100, wb = 2.500):
         """
         Generate road displacement input u(t) for a moving vehicle.
 
@@ -34,6 +34,7 @@ class MyRoadGenerator(object):
         N = int(L/dx)
         self.x_road = np.linspace(0, L, N)
         t_delay = wb/v
+        n = np.arange(1, int((L/dx)//2)+1)
     
         
         
@@ -45,7 +46,7 @@ class MyRoadGenerator(object):
         #dOmega = self.Omega_n[1] - self.Omega_n[0]
         dOmega = (omega_max-omega_min)/(N//2)
         S_Omega = self.S0 * (self.Omega_n / self.Omega0)**(-2)
-        phi = seed
+        phi = 2 * np.pi * np.random.rand(len(n))
     
         
 
@@ -62,6 +63,7 @@ class MyRoadGenerator(object):
             #self.t[0] = 0.0
         x_t = v * self.t
         self.u_front = np.interp(x_t, self.x_road, self.z)  # interpolate z(x) at x(t)
+        
         t_rear = self.t - t_delay
         self.u_rear = np.interp(t_rear, self.t, self.u_front, left=self.u_front[0], right=self.u_front[-1])
         self.u_input = np.column_stack([self.u_front, self.u_rear])
@@ -79,7 +81,9 @@ if __name__ == '__main__':
     # Create a RoadProfile instance
     testprofile = MyRoadGenerator()
     hihi = testprofile.generate_road_input()
-    print(hihi)
+    
+    
+
     
 
     

@@ -1,95 +1,90 @@
 import numpy as np
 from scipy import signal as sg
-from my_road_generator import*
-import os
 
 
 
 
 class HalfCarModel(object):
 
-    def __init__(self):
-        self.y = None
-        self.t_out = None
-        self.x_out = None
-        self.sys = None
+   
+    def __init__(self, mass, k_s1, k_s2, c1, c2, k_t1, k_t2, m_u1, m_u2, a, b, I):
+        
 
-    def generate_car_result(self, u, t):
-      
-
-    
-    
-        m_s = 1112  
-        m_u1 = 40
-        m_u2 = 40
-        k_s1 = 32.5*1000 
-        k_s2 = 27.5*1000 
-        k_t1 = 150*1000
-        k_t2 = 150*1000
-        c1 = 2500 #front
-        c2 = 2500
-        wb = 2.500
-        cg = 0.4
-        a = wb - wb*cg # front
-        b = wb-a  # back
-        I = 2750 #kgm^2
-
-
-
+        self.m_s = mass
+        self.k_s1 = k_s1
+        self.k_s2 = k_s2
+        self.c1 = c1
+        self.c2 = c2
+        self.k_t1 = k_t1
+        self.k_t2 = k_t2
+        self.m_u1 = m_u1
+        self.m_u2 = m_u2
+        self.a = a
+        self.b = b
+        self.I = I
+       
         """
-        x1 = Front disp
-        x2 = Front speed
-        x3 = Rear disp
-        x4 = Rear speed
-        x5 = Sprung disp
-        x6 = Sprung speed
-        x7 = Angular disp
-        x8 = Angular speed
-        """
+         State Space X Vector:
+        
+         1. Front axle displacement
+         2. Front axle speed
+         3. Rear axle displacement
+         4. rear axle speed
+         5. Sprung mass displacement
+         6. Sprung mass speed
+         7. Sprung mass angular displacement
+         8. Sprung mass angular speed
 
-        # State-space matrices
-        A = np.array([
-        [0, 1, 0, 0, 0, 0, 0, 0,],
-        [-(k_s1 + k_t1)/m_u1, -c1/m_u1,0, 0, k_s1/m_u1, c1/m_u1, (k_s1*a)/m_u1, (a*c1)/m_u1],
-        [0, 0, 0, 1, 0, 0, 0, 0],
-        [0, 0, -(k_s2 + k_t2)/m_u2, -c2/m_u2, k_s2/m_u2, c2/m_u2, -(b*k_s2)/m_u2, -(b*c2)/m_u2],
-        [0, 0, 0, 0, 0, 1, 0, 0],
-        [k_s1/m_s, c1/m_s, k_s2/m_s, c2/m_s, -(k_s1+k_s2)/m_s, -(c1+c2)/m_s, (b*k_s2 - a*k_s1)/m_s, (b*c2 - a*c1)/m_s],
-        [0, 0, 0, 0, 0, 0, 0, 1],
-        [a * k_s1 / I, a * c1 / I, -b * k_s2 / I,  -b * c2 / I, (-a * k_s1 + b * k_s2) / I, (-a * c1 + b * c2) / I, -(a**2 * k_s1 + b**2 * k_s2) / I, -(a**2 * c1 + b**2 * c2) / I ]
-
+       """
+        self.A = np.array([
+            [0, 1, 0, 0, 0, 0, 0, 0],
+            [-(self.k_s1 + self.k_t1)/self.m_u1, -self.c1/self.m_u1, 0, 0, self.k_s1/self.m_u1, self.c1/self.m_u1, (self.k_s1*self.a)/self.m_u1, (self.a*self.c1)/self.m_u1],
+            [0, 0, 0, 1, 0, 0, 0, 0],
+            [0, 0, -(self.k_s2 + self.k_t2)/self.m_u2, -self.c2/self.m_u2, self.k_s2/self.m_u2, self.c2/self.m_u2, -(self.b*self.k_s2)/self.m_u2, -(self.b*self.c2)/self.m_u2],
+            [0, 0, 0, 0, 0, 1, 0, 0],
+            [self.k_s1/self.m_s, self.c1/self.m_s, self.k_s2/self.m_s, self.c2/self.m_s, -(self.k_s1+self.k_s2)/self.m_s, -(self.c1+self.c2)/self.m_s, (self.b*self.k_s2 - self.a*self.k_s1)/self.m_s, (self.b*self.c2 - self.a*self.c1)/self.m_s],
+            [0, 0, 0, 0, 0, 0, 0, 1],
+            [self.a * self.k_s1 / self.I, self.a * self.c1 / self.I, -self.b * self.k_s2 / self.I, -self.b * self.c2 / self.I, (-self.a * self.k_s1 + self.b * self.k_s2) / self.I, (-self.a * self.c1 + self.b * self.c2) / self.I, -(self.a**2 * self.k_s1 + self.b**2 * self.k_s2) / self.I, -(self.a**2 * self.c1 + self.b**2 * self.c2) / self.I ]
         ])
 
-        B = np.array([
+        self.B = np.array([
             [0, 0],
-            [k_t1/m_u1, 0],
+            [self.k_t1/self.m_u1, 0],
             [0, 0],
-            [0, k_t2/m_u2],
+            [0, self.k_t2/self.m_u2],
             [0,0],
             [0,0],
             [0,0],
             [0,0]
         ])
 
-        C = np.array([
-            [k_s1/m_s, c1/m_s, k_s2/m_s, c2/m_s, -(k_s1+k_s2)/m_s, -(c1+c2)/m_s, -(k_s2*b - k_s1*a)/m_s, -(c2*b - c1*a)/m_s]
-            ])
+        
+        self.C = np.array([
+            [self.k_s1/self.m_s, self.c1/self.m_s, self.k_s2/self.m_s, self.c2/self.m_s,
+             -(self.k_s1+self.k_s2)/self.m_s, -(self.c1+self.c2)/self.m_s,
+             (self.b*self.k_s2 - self.a*self.k_s1)/self.m_s, (self.b*self.c2 - self.a*self.c1)/self.m_s]
+        ])
 
-        D = np.array([
+        self.D = np.array([
             [0, 0]
-            ])
-
-
-
-        # Define system
-        self.sys = sg.StateSpace(A, B, C, D)
+        ])
 
         
+        self.sys = sg.StateSpace(self.A, self.B, self.C, self.D)
+
+    
+    def generate_car_result(self, time_vector, road_input_matrix):
+       
+
+       
+        if road_input_matrix.ndim == 1: 
+            raise ValueError("road_input_matrix must be a 2D array [front_road, rear_road]")
+        if road_input_matrix.shape[0] == 2: 
+            road_input_matrix = road_input_matrix.T 
 
 
-        self.t_out, self.y, self.x_out = sg.lsim(self.sys, U=u , T=t)
-        
-        #t2_out, y2, x2_out = lsim(sys, U= testprofile.profile, T= testprofile.x)
+        self.t_out, self.y, self.x_out = sg.lsim(self.sys, U=road_input_matrix, T=time_vector)
+
         return self.t_out, self.y, self.x_out
     
 
